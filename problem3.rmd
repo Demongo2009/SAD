@@ -1,0 +1,40 @@
+PROBLEM 3
+Dokonalem wyboru problemu nr.1.
+
+```{r}
+list <- c("data/k_d_01_2021.csv",
+"data/k_d_02_2021.csv",
+"data/k_d_03_2021.csv",
+"data/k_d_04_2021.csv",
+"data/k_d_06_2021.csv",
+"data/k_d_07_2021.csv",
+"data/k_d_08_2021.csv",
+"data/k_d_09_2021.csv",
+"data/k_d_10_2021.csv",
+"data/k_d_11_2021.csv",
+"data/k_d_12_2021.csv")
+
+for(i in list) {                              # Head of for-loop
+  df <- rbind(df,                                  # Read and store data frames
+         read.csv(i))
+}
+names(df) <- c('STATION_ID', 'STATION_NAME', 'YEAR', 'MONTH', 'DAY',
+               'T_MAX', 'STATUS_T_MAX', 'T_MIN', 'STATUS_T_MIN', 'T_AVG', 'STATUS_T_AVG',
+               'T_MIN_GROUND', 'STATUS_T_MIN_GROUND', 'SUM_OF_PRECIPITATION', 'STATUS_SUM_OF_PRECIPITATION',
+               'TYPE_OF_RAINFALL', 'SNOW_COVER_HEIGHT', 'STATUS_SNOW_COVER_HEIGHT')
+
+df$AMPLITUDE <- df$T_MAX - df$T_MIN
+df <- df %>% group_by(MONTH) %>% summarise(mean_amp = mean(AMPLITUDE))
+print(df)
+```
+
+Wykres:
+```{r}
+ggplot(df, aes(x = month, y = mean_amp)) +
+  geom_line() +
+  ggtitle("Zmiany dobowej amplitudy temperatur w 2021 roku") +
+  xlab("Miesiac") +
+  ylab("Amplituda [st. C]") +
+  scale_x_continuous(breaks = 13)
+  scale_y_continuous(breaks = 13)
+```

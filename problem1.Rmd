@@ -1,0 +1,74 @@
+
+!!!!
+
+ZGODNIE Z USTALENIEM PODJALEM SIE PROBY ROZWIAZANIA TYLKO PROBLEMU 1 I 3 Z UWAGI NA BRAK PARTNERA W ZESPOLE
+
+!!!!
+
+
+PROBLEM 1
+Wybrałem Pszczynę, Pułtusk oraz Białowieżę.
+
+```{r}
+
+df <- read.csv(file = 'data/k_d_07_2021.csv', header = FALSE)
+
+cols <- c('STATION_ID', 'STATION_NAME', 'YEAR', 'MONTH', 'DAY',
+               'T_MAX', 'STATUS_T_MAX', 'T_MIN', 'STATUS_T_MIN', 'T_AVG', 'STATUS_T_AVG',
+               'T_MIN_GROUND', 'STATUS_T_MIN_GROUND', 'SUM_OF_PRECIPITATION', 'STATUS_SUM_OF_PRECIPITATION',
+               'TYPE_OF_RAINFALL', 'SNOW_COVER_HEIGHT', 'STATUS_SNOW_COVER_HEIGHT')
+colnames(df) <- cols
+
+stations = c('PSZCZYNA', 'PUŁTUSK', 'BIAŁOWIEŻA')
+df <- df[df$STATION_NAME %in% stations, ]
+str(df)
+#selection
+cut <- c('STATION_NAME', 'YEAR', 'MONTH', 'DAY', 'T_MAX', 'T_MIN', 'T_AVG')
+df <- df[, cut]
+
+
+boxplot(T_MAX~STATION_NAME, df, xlab="station", ylab="maxTemp", main="CZESC 1")
+```
+
+Najwyższe temperatury w ciągu dnia zostały zanotowane w Pułtusku. Jednak szystkie stacje posiadają nie roznia sie od siebie wiecej niz jeden stopnien Celsujsza.
+Sciany pudelka sa w przyblizeniu rozmiarowo podobne.
+
+```{r}
+df$DAILY_T_DIFF <- df$T_MAX - df$T_MIN
+boxplot(
+  DAILY_T_DIFF ~ STATION_NAME, df, xlab="station",
+  ylab="diff", main="CZESC 2"
+)
+```
+
+Największe dobowe różnice sa w Pułtusku. Srednia różnic jest o kilka stopni Celsjusza wyższa od pozostałych.
+
+```{r}
+
+df$DATE <- as.Date(paste(df$YEAR, df$MONTH, df$DAY, sep = "-"), "%Y-%m-%d")
+df <- subset(df, select = -c(YEAR, MONTH, DAY))
+df <- split(df, with(df, interaction(STATION_NAME)), drop = TRUE)
+  result = data.frame()
+  for(station_df in df){
+    sorted <- station_df[order(station_df$DATE), ]
+
+    sorted$DIFF_MAX_T_BETWEEN_PREVIOUS_DAY <- sorted$T_MAX - lag(sorted$T_MAX)
+    result <- rbind(result, sorted)
+  }
+boxplot(DIFF_MAX_T_BETWEEN_PREVIOUS_DAY ~ STATION_NAME, result, xlab="station",
+  ylab="diff", main="CZESC 3")
+```
+
+Roznica wacha sie w okolicy zera. Wariancja była najmniejsza w Białowieży, a największa w Pułtusku.
+
+Szacowanie parametrów rozkładu normalnego:
+```{r}
+data <- result[result$STATION_NAME == 'PUŁTUSK', ]
+data <-data$DIFF_MAX_T_BETWEEN_PREVIOUS_DAY
+datamean <- mean(data, na.rm = TRUE)
+datasd <- sd(data, na.rm = TRUE)
+
+plot.new()
+curve(dnorm(x, mean=datamean, sd=datasd), add=TRUE, yaxt="n")
+```
+
